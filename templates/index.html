@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank Parser - Procesador de Extractos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        select:hover, select:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        input[type="password"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="password"]:hover,
+        input[type="password"]:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        input[type="password"]::placeholder {
+            color: #999;
+            font-size: 13px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border: 2px dashed #d0d0d0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .file-input-label:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+        }
+
+        .file-input-label.has-file {
+            background: #e7f3ff;
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .file-icon {
+            margin-right: 10px;
+            font-size: 20px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loader {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loader.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .message.active {
+            display: block;
+        }
+
+        .message.error {
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+
+        .message.success {
+            background: #efe;
+            color: #3c3;
+            border: 1px solid #cfc;
+        }
+
+        .message.info {
+            background: #e7f3ff;
+            color: #0066cc;
+            border: 1px solid #b3d9ff;
+        }
+
+        .message.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .password-group {
+            display: none;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .password-group.visible {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Bank Parser</h1>
+        <p class="subtitle">Convierte extractos bancarios PDF a Excel</p>
+
+        <form id="uploadForm">
+            <div class="form-group">
+                <label for="banco">Selecciona el banco:</label>
+                <select id="banco" name="banco" required>
+                    {% for banco in bancos %}
+                    <option value="{{ banco }}">{{ banco }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Selecciona el archivo PDF:</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="pdf_file" name="pdf_file" accept=".pdf" required>
+                    <label for="pdf_file" class="file-input-label" id="fileLabel">
+                        <span class="file-icon">📄</span>
+                        <span id="fileName">Seleccionar archivo PDF</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="message" id="pdfCheckMessage"></div>
+
+            <div class="form-group password-group" id="passwordGroup">
+                <label for="password">Contraseña del PDF:</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    placeholder="Ingrese la contraseña del PDF"
+                >
+            </div>
+
+            <button type="submit" id="submitBtn">Procesar PDF</button>
+        </form>
+
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <p style="margin-top: 10px; color: #666;">Procesando archivo...</p>
+        </div>
+
+        <div class="message" id="message"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('uploadForm');
+        const fileInput = document.getElementById('pdf_file');
+        const fileLabel = document.getElementById('fileLabel');
+        const fileName = document.getElementById('fileName');
+        const submitBtn = document.getElementById('submitBtn');
+        const loader = document.getElementById('loader');
+        const message = document.getElementById('message');
+        const pdfCheckMessage = document.getElementById('pdfCheckMessage');
+        const passwordGroup = document.getElementById('passwordGroup');
+        const passwordInput = document.getElementById('password');
+
+        let isEncrypted = false;
+
+        fileInput.addEventListener('change', async function(e) {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                fileName.textContent = file.name;
+                fileLabel.classList.add('has-file');
+
+                // Verificar si el PDF está protegido
+                await checkPdfEncryption(file);
+            } else {
+                fileName.textContent = 'Seleccionar archivo PDF';
+                fileLabel.classList.remove('has-file');
+                pdfCheckMessage.classList.remove('active');
+                passwordGroup.classList.remove('visible');
+            }
+        });
+
+        async function checkPdfEncryption(file) {
+            const formData = new FormData();
+            formData.append('pdf_file', file);
+
+            try {
+                const response = await fetch('/check-pdf', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    isEncrypted = data.encrypted;
+
+                    if (isEncrypted) {
+                        pdfCheckMessage.textContent = '🔒 Este PDF está protegido con contraseña. Por favor, ingrésela a continuación.';
+                        pdfCheckMessage.className = 'message warning active';
+                        passwordGroup.classList.add('visible');
+                        passwordInput.required = true;
+                    } else {
+                        pdfCheckMessage.textContent = '✅ PDF sin protección detectado';
+                        pdfCheckMessage.className = 'message info active';
+                        passwordGroup.classList.remove('visible');
+                        passwordInput.required = false;
+                        passwordInput.value = '';
+                    }
+                } else {
+                    console.error('Error al verificar PDF');
+                }
+            } catch (error) {
+                console.error('Error de conexión al verificar PDF:', error);
+            }
+        }
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // Validar contraseña si el PDF está protegido
+            if (isEncrypted && !passwordInput.value.trim()) {
+                message.textContent = '⚠️ Este PDF está protegido. Debe ingresar la contraseña.';
+                message.className = 'message warning active';
+                return;
+            }
+
+            const formData = new FormData(form);
+
+            // Mostrar loader
+            loader.classList.add('active');
+            submitBtn.disabled = true;
+            message.classList.remove('active');
+
+            try {
+                const response = await fetch('/process', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    // Descargar archivo
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    
+                    // Obtener nombre del archivo de los headers
+                    const contentDisposition = response.headers.get('content-disposition');
+                    let filename = 'extracto_validado.xlsx';
+                    if (contentDisposition) {
+                        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+                        if (matches != null && matches[1]) {
+                            filename = matches[1].replace(/['"]/g, '');
+                        }
+                    }
+                    
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+
+                    // Mostrar mensaje de éxito
+                    message.textContent = '✅ Archivo procesado correctamente. La descarga comenzará automáticamente.';
+                    message.className = 'message success active';
+                } else {
+                    // Error del servidor
+                    const errorData = await response.json();
+                    message.textContent = '❌ Error: ' + (errorData.error || 'Error desconocido');
+                    message.className = 'message error active';
+                }
+            } catch (error) {
+                message.textContent = '❌ Error de conexión: ' + error.message;
+                message.className = 'message error active';
+            } finally {
+                loader.classList.remove('active');
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

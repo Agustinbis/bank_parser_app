@@ -1,0 +1,16 @@
+services:
+  bank-parser:
+    build: .
+    container_name: bank-parser-web
+    ports:
+      - "5001:5000"
+    volumes:
+      # CRÍTICO: Montar todo esto para hacer cambios sin rebuild, solo restart.
+      - ./parsers:/app/parsers:ro
+      - ./templates:/app/templates:ro
+      - ./counter.py:/app/counter.py:ro
+      - ./web_app.py:/app/web_app.py:ro
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
